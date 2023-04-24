@@ -1,0 +1,21 @@
+{
+  "name": "node_js_start",
+  "version": "1.0.0",
+  "description": "gogo",
+  "main": "main.js",
+  "scripts": {
+    "test": "pm2 start main.js --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "unknown"
+  },
+  "keywords": [
+    "nodejs"
+  ],
+  "author": "kyh",
+  "license": "ISC",
+  "dependencies": {
+    "sanitize-html": "^2.10.0"
+  }
+}
