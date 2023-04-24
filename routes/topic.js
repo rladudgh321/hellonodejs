@@ -5,7 +5,8 @@ const template = require('../lib/template');
 const path = require('path');
 const sanitize = require('sanitize-html');
 const auth = require('../lib/auth');
-
+const db = require('../lib/db');
+const shortid = require('shortid');
 router.get('/create', (request,response)=>{
     if(!auth.isOwner(request,response)){
         response.redirect('/');
@@ -33,12 +34,14 @@ router.get('/create', (request,response)=>{
             const post = request.body;
             const title = post.title;
             const description = post.description;
-            fs.writeFile(`./data/${title}`,description,'utf-8',(error)=>{
-                response.writeHead(302,{
-                    Location:`/topic/${title}`
-                });
-                response.end();
-            });
+            const id=shortid.generate();
+            db.get('topics').push({
+                id:id,
+                title:title,
+                description:description,
+                user_id:request.user.id
+            }).write();
+            response.redirect(`/topic/${id}`);
     });
 
     router.get('/update/:pageId',(request,response)=>{
@@ -46,22 +49,24 @@ router.get('/create', (request,response)=>{
             response.redirect('/');
             return false;
         }
-        
-            const filteredid = path.parse(request.params.pageId).base;
-            fs.readFile(`./data/${filteredid}`,'utf-8',(error,description)=>{
+        const topic = db.get('topics').find({id:request.params.pageId}).value();
+        if(topic.user_id !== request.user.id){
+            request.flash('error', 'Not yours');
+            return response.redirect('/');
+        }
                 const title = "UPDATE";
                 const list = template.list(request.list);
                 const html = template.html(title,'',list,
                 `<form action="/topic/update" method="post">
-                    <input type="hidden" name="id" value="${filteredid}">
-                    <p><input type="text" name="title" placeholder="title" value="${filteredid}"></p>
-                    <p><textarea name="description" placeholder="description">${description}</textarea></p>
+                    <input type="hidden" name="id" value="${topic.id}">
+                    <p><input type="text" name="title" placeholder="title" value="${topic.title}"></p>
+                    <p><textarea name="description" placeholder="description">${topic.description}</textarea></p>
                     <p><input type="submit" value="update"></p>
                 </form>`, auth.statusUI(request,response)
                 );
                 response.writeHead(200);
                 response.end(html);
-            });
+     
        
     });
 
@@ -74,14 +79,15 @@ router.get('/create', (request,response)=>{
         const id = post.id;
         const title = post.title;
         const description = post.description;
-        fs.rename(`./data/${id}`,`./data/${title}`,result =>{
-            fs.writeFile(`./data/${title}`,description,'utf-8',(error)=>{
-                response.writeHead(302,{
-                    Location:`/topic/${title}`
-                });
-                response.end();
-            });
-        });
+        if(topic.user_id !== request.user.id){
+            request.flash('error', 'Not yours');
+            return response.redirect('/');
+        }
+        db.get('topics').find({id:id}).assign({
+            title:title,
+            description:description
+        }).write();
+        response.redirect(`/topic/${id}`);
     });
 
     router.post('/delete', (request,response)=>{
@@ -91,42 +97,34 @@ router.get('/create', (request,response)=>{
         }
         const post = request.body;
         const id = post.id;
+        const topic = db.get('topics').find({id:id}).value();
+        if(topic.user_id !== request.user.id){
+            request.flash('error', 'Not yours');
+            return response.redirect('/');
+        }
         const filteredid = path.parse(id).base;
-        fs.unlink(`./data/${filteredid}`,(result)=>{
-            response.writeHead(302,{
-                Location:`/`
-            });
-            response.end();
-        });
+        db.get('topics').remove({id:filteredid}).write();
+        response.redirect('/');
     });
 
     router.get('/:pageId', (request,response,next)=>{
-            // console.log("request.list",request.list);
-         
-
-            const filteredid = path.parse(request.params.pageId).base;
-            console.log(filteredid);
-            fs.readFile(`./data/${filteredid}`,'utf-8',(error,description)=>{
-                if(error){
-                    next(error)
-                } else {
-                    const title = sanitize(filteredid);
-                    const list = template.list(request.list);
-                    const html = template.html(title,sanitize(description),list,
-                    `<a href="/topic/create">create</a>
-                    <a href="/topic/update/${filteredid}">update</a>
-                    <form action="/topic/delete" method="post">
-                    <input type="hidden" name="id" value="${title}">
-                    <p><input type="submit" value="delete"></p>
-                    </form>
-                    `, auth.statusUI(request,response)
-                    );
-                    response.writeHead(200);
-                    response.end(html);
-                    
-                }
-            });
-
+        const topic = db.get('topics').find({id:request.params.pageId}).value();
+        const user = db.get('users').find({id:topic.user_id}).value();
+        console.log("topic",topic);
+        const title = sanitize(topic.title);
+        const list = template.list(request.list);
+        const html = template.html(title,sanitize(topic.description),list,
+        `<p>by ${user.displayName}</p>
+        <a href="/topic/create">create</a>
+        <a href="/topic/update/${topic.id}">update</a>
+        <form action="/topic/delete" method="post">
+        <input type="hidden" name="id" value="${topic.id}">
+        <p><input type="submit" value="delete"></p>
+        </form>
+        `, auth.statusUI(request,response)
+        );
+        response.writeHead(200);
+        response.end(html);
     });
 
 module.exports = router;

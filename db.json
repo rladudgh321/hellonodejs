@@ -1,0 +1,42 @@
+{
+  "users": [
+    {
+      "id": "xMXw157xt",
+      "email": "12@naver.com",
+      "password": "111",
+      "displayName": "12"
+    },
+    {
+      "id": "3RYiZNVX7",
+      "email": "egoing777@gmail.com",
+      "password": "111111",
+      "displayName": "egoing"
+    }
+  ],
+  "topics": [
+    {
+      "id": "OKy8JZos_",
+      "title": "aa",
+      "description": "aa is ..",
+      "user_id": "xMXw157xt"
+    },
+    {
+      "id": "asYVSHZIK",
+      "title": "bb",
+      "description": "bb is ...",
+      "user_id": "xMXw157xt"
+    },
+    {
+      "id": "ekr1tgSaS",
+      "title": "ccc",
+      "description": "ccc is ..",
+      "user_id": "xMXw157xt"
+    },
+    {
+      "id": "8X_NpUre4",
+      "title": "ddd",
+      "description": "ddd is ...",
+      "user_id": "3RYiZNVX7"
+    }
+  ]
+}
