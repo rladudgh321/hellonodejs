@@ -6,23 +6,31 @@ const path = require('path');
 const sanitize = require('sanitize-html');
 const auth = require('../lib/auth');
 
-
 router.get('/login', (request,response)=>{
     console.log("request.list",request.list);
     const title = "Login";
-            const list = template.list(request.list);
-            const html = template.html(title,'',list,
-            `<form action="/auth/login" method="post">
-                <p><input type="text" name="email" placeholder="email"></p>
-                <p><input type="password" name="pwd" placeholder="password"></p>
-                <p><input type="submit" value="login"></p>
-            </form>`,
-            auth.statusUI(request,response)
-            );
-            response.send(html);
-        
-    });
+    const list = template.list(request.list);
+    const html = template.html(title,'',list,
+    `<form action="/auth/login" method="post">
+    <p><input type="text" name="email" placeholder="email"></p>
+    <p><input type="password" name="pwd" placeholder="password"></p>
+    <p><input type="submit" value="login"></p>
+    </form>`,
+    auth.statusUI(request,response)
+    );
+    response.send(html);
+});
 
+router.get('/logout', (request,response,next)=>{
+    request.logout(err=>{
+        if(err){
+            return next(err);
+        }
+        response.redirect('/');
+    });
+});
+        
+        /*
 router.post('/login', (request,response)=>{
     const post = request.body;
     const email = post.email;
@@ -43,7 +51,7 @@ router.get('/logout', (request,response)=>{
             response.redirect('/');
         });
 });
-/*
+
 router.get('/create', (request,response)=>{
     console.log("request.list",request.list);
     const title = "CREATE";

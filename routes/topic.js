@@ -7,7 +7,7 @@ const sanitize = require('sanitize-html');
 const auth = require('../lib/auth');
 
 router.get('/create', (request,response)=>{
-    if(!request.session.is_logined){
+    if(!auth.isOwner(request,response)){
         response.redirect('/');
         return false;
     }
@@ -26,7 +26,7 @@ router.get('/create', (request,response)=>{
     });
 
     router.post('/create', (request,response)=>{
-        if(!request.session.is_logined){
+        if(!auth.isOwner(request,response)){
             response.redirect('/');
             return false;
         }
@@ -42,7 +42,7 @@ router.get('/create', (request,response)=>{
     });
 
     router.get('/update/:pageId',(request,response)=>{
-        if(!request.session.is_logined){
+        if(!auth.isOwner(request,response)){
             response.redirect('/');
             return false;
         }
@@ -66,7 +66,7 @@ router.get('/create', (request,response)=>{
     });
 
     router.post('/update', (request,response)=>{
-        if(!request.session.is_logined){
+        if(!auth.isOwner(request,response)){
             response.redirect('/');
             return false;
         }
@@ -85,7 +85,7 @@ router.get('/create', (request,response)=>{
     });
 
     router.post('/delete', (request,response)=>{
-        if(!request.session.is_logined){
+        if(!auth.isOwner(request,response)){
             response.redirect('/');
             return false;
         }
@@ -100,28 +100,33 @@ router.get('/create', (request,response)=>{
         });
     });
 
-    router.get('/:pageId', (request,response)=>{
+    router.get('/:pageId', (request,response,next)=>{
             // console.log("request.list",request.list);
+         
 
-        fs.readdir(`./data`,(error, filelist)=>{
             const filteredid = path.parse(request.params.pageId).base;
             console.log(filteredid);
             fs.readFile(`./data/${filteredid}`,'utf-8',(error,description)=>{
-                const title = sanitize(filteredid);
-                const list = template.list(filelist);
-                const html = template.html(title,sanitize(description),list,
-                `<a href="/topic/create">create</a>
-                <a href="/topic/update/${filteredid}">update</a>
-                <form action="/topic/delete" method="post">
-                <input type="hidden" name="id" value="${title}">
-                <p><input type="submit" value="delete"></p>
-                </form>
-                `, auth.statusUI(request,response)
-                );
-                response.writeHead(200);
-                response.end(html);
+                if(error){
+                    next(error)
+                } else {
+                    const title = sanitize(filteredid);
+                    const list = template.list(request.list);
+                    const html = template.html(title,sanitize(description),list,
+                    `<a href="/topic/create">create</a>
+                    <a href="/topic/update/${filteredid}">update</a>
+                    <form action="/topic/delete" method="post">
+                    <input type="hidden" name="id" value="${title}">
+                    <p><input type="submit" value="delete"></p>
+                    </form>
+                    `, auth.statusUI(request,response)
+                    );
+                    response.writeHead(200);
+                    response.end(html);
+                    
+                }
             });
-        });
+
     });
 
 module.exports = router;
